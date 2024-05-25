@@ -1,37 +1,69 @@
 /**
  * Represents the year input element for the date of birth.
  */
-const yearElement = document.getElementById("ddyears");
+const $yearElement = document.getElementById("yearInput");
 
 /**
  * Sets the maximum year value for the date of birth input element.
  */
-yearElement.setAttribute("max", new Date().getFullYear());
+$yearElement.setAttribute("max", new Date().getFullYear());
+
+/**
+ * Represents the element to show the result of the name.
+ */
+const $nameElement = document.getElementById("nameElement");
+
+/**
+ * Represents the element to show the result of the birthday.
+ */
+const $birthdayElement = document.getElementById("birthdayElement");
+
+/**
+ * Represents the element to show the result for the RFC calculation.
+ */
+const $resultElement = document.getElementById("resultElement");
 
 /**
  * Represents the result container for the RFC calculation.
  */
-const resultElement = document.getElementById("result_rfc");
+const $resultWrapper = document.getElementById("resultWrapper");
 
 /**
- * Hide the result element initially.
+ * Hide the result section initially.
  */
-resultElement.style.opacity = 0;
+$resultWrapper.style.opacity = 0;
+
+/**
+ * Represents the RFC form element.
+ * @type {HTMLElement}
+ */
+const $dataForm = document.getElementById("dataForm");
+
+/** Attach the event listener to the RFC form. */
+$dataForm.addEventListener("submit", handleSubmit);
+
+/**
+ * Represents the repeat button element.
+ * @type {HTMLElement}
+ * */
+const $repeatButton = document.getElementById("repeatButton");
+
+/** Attach the event listener to the repeat button. */
+$repeatButton.addEventListener("click", repeat);
 
 /**
  * Copies the result of RFC calculation to the clipboard.
  */
 async function copyRFCtoClipBoard() {
-	const rfcResultElement = document.getElementById("rfc_result");
-	if (rfcResultElement) {
+	if ($resultElement) {
 		try {
-			await navigator.clipboard.writeText(rfcResultElement.innerHTML);
+			await navigator.clipboard.writeText($resultElement.innerHTML);
 			alert("Resultado copiado al portapapeles");
 		} catch (err) {
 			alert("Error al copiar texto: ", err);
 		}
 	} else {
-		alert('Elemento con ID "rfc_result" no encontrado');
+		alert('Elemento con ID "resultElement" no encontrado');
 	}
 }
 
@@ -46,107 +78,79 @@ function handleSubmit(event) {
 }
 
 /**
- * Represents the RFC form element.
- * @type {HTMLElement}
- */
-var rfc_form = document.getElementById("rfc_form");
-
-/** Attach the event listener to the RFC form. */
-rfc_form.addEventListener("submit", function (event) {
-	handleSubmit(event);
-
-	/** Enable the repeat button after form submission. */
-	repeat_button.disabled = false;
-});
-
-/**
- * Represents the repeat button element.
- * @type {HTMLElement}
- * */
-var repeat_button = document.getElementById("repeatButton");
-
-/** Initially disable the repeat button. */
-repeat_button.setAttribute("disabled", "true");
-
-/** Attach the event listener to the repeat button. */
-repeat_button.addEventListener("click", repeat);
-
-/**
  * Calculates the RFC (Registro Federal de Contribuyentes) based on the provided input values.
  * @returns {boolean} Returns false.
  */
 function calculate() {
 	// Get the input values
-	const $lastName1 = document.getElementById("ap_paterno").value.trim();
-	const $lastName2 = document.getElementById("ap_materno").value.trim();
-	const name = document.getElementById("nombre").value.trim();
-	let day = document.getElementById("dddays").value.trim();
+	const $lastName1 = document.getElementById("lastName1Input").value.trim();
+	const $lastName2 = document.getElementById("lastName2Input").value.trim();
+	const $name = document.getElementById("nameInput").value.trim();
+	let $day = document.getElementById("dayInput").value.trim();
 
 	// Add a leading zero to the day if it is less than 2 digits
-	if (day.length < 2) {
-		day = "0" + day;
+	if ($day.length < 2) {
+		$day = "0" + $day;
 	}
-	const month = document.getElementById("ddmonths").value.trim();
-	const year = yearElement.value.trim();
+	const $month = document.getElementById("monthInput").value.trim();
+	const year = $yearElement.value.trim();
 
 	// Validate the input values
-	const birthday = year.slice(-2) + month + day;
+	const birthday = year.slice(-2) + $month + $day;
 
 	// Filter the input values
-	let filteredLastName1 = RFCFiltraAcentos($lastName1.toLowerCase());
-	let filteredLastName2 = RFCFiltraAcentos($lastName2.toLowerCase());
-	let filteredName = RFCFiltraAcentos(name.toLowerCase());
+	let filteredLastName1 = filterSpecialCharacters($lastName1.toLowerCase());
+	let filteredLastName2 = filterSpecialCharacters($lastName2.toLowerCase());
+	let filteredName = filterSpecialCharacters($name.toLowerCase());
 
 	const lastName1_old = filteredLastName1;
 	const lastName2_old = filteredLastName2;
 	const name_old = filteredName;
 
-	filteredLastName1 = RFCFiltraNombres(filteredLastName1);
-	filteredLastName2 = RFCFiltraNombres(filteredLastName2);
-	filteredName = RFCFiltraNombres(filteredName);
+	filteredLastName1 = filterName(filteredLastName1);
+	filteredLastName2 = filterName(filteredLastName2);
+	filteredName = filterName(filteredName);
 
 	// Calculate the RFC
 	let rfc = "";
 	if (filteredLastName1 && filteredLastName2) {
 		rfc =
 			filteredLastName1.length < 3
-				? RFCApellidoCorto(
+				? shortLastName(
 						filteredLastName1,
 						filteredLastName2,
 						filteredName
 				  )
-				: RFCArmalo(filteredLastName1, filteredLastName2, filteredName);
+				: buildRFC(filteredLastName1, filteredLastName2, filteredName);
 	}
 	if (!filteredLastName1 && filteredLastName2) {
-		rfc = RFCUnApellido(filteredName, filteredLastName2);
+		rfc = uniqueLastName(filteredName, filteredLastName2);
 	}
 	if (filteredLastName1 && !filteredLastName2) {
-		rfc = RFCUnApellido(filteredName, filteredLastName1);
+		rfc = uniqueLastName(filteredName, filteredLastName1);
 	}
 
-	rfc = RFCQuitaProhibidas(rfc);
+	rfc = removeSwearWords(rfc);
 	rfc = (
 		rfc +
 		birthday +
-		homonimia(lastName1_old, lastName2_old, name_old)
+		getHomoClave(lastName1_old, lastName2_old, name_old)
 	).toUpperCase();
-	rfc = RFCDigitoVerificador(rfc);
+	rfc = VerifierDigit(rfc);
 
 	// Display the result
-	document.getElementById(
-		"name_rfc"
-	).textContent = `${$lastName1.toUpperCase()} ${$lastName2.toUpperCase()} ${name.toUpperCase()}`;
-	document.getElementById("dob_rfc").textContent = `${day}/${month}/${year}`;
-	document.getElementById("rfc_result").textContent = rfc;
+	$nameElement.textContent = `${$lastName1.toUpperCase()} ${$lastName2.toUpperCase()} ${$name.toUpperCase()}`;
+	$birthdayElement.textContent = `${$day}/${$month}/${year}`;
+	$resultElement.textContent = rfc;
 
 	// Hide the form and display the result
-	fadeInElement("result_rfc");
-	fadeOutElement("rfc_form_div");
+	fadeInElement("resultWrapper");
+	fadeOutElement("dataFormWrapper");
 
 	// Scroll to the result section on small screens
 	if (window.innerWidth < 400) {
-		if (resultElement) {
-			const targetPosition = targetDiv.offsetTop;
+		if ($resultWrapper) {
+			const targetPosition = $resultWrapper.offsetTop;
 			window.scrollTo({ top: targetPosition, behavior: "smooth" });
 		}
 	}
@@ -158,136 +162,136 @@ function calculate() {
  * @param {string} rfc - The RFC to calculate the digit verifier for.
  * @returns {string} - The RFC with the digit verifier appended.
  */
-function RFCDigitoVerificador(rfc) {
-	var rfcsuma = [];
-	var nv = 0;
-	var y = 0;
+function VerifierDigit(rfc) {
+	let sum = [];
+	let nv = 0;
+	let y = 0;
 	for (i = 0; i <= rfc.length; i++) {
-		var letra = rfc.substr(i, 1);
-		switch (letra) {
+		let letter = rfc.substr(i, 1);
+		switch (letter) {
 			case "0":
-				rfcsuma.push("00");
+				sum.push("00");
 				break;
 			case "1":
-				rfcsuma.push("01");
+				sum.push("01");
 				break;
 			case "2":
-				rfcsuma.push("02");
+				sum.push("02");
 				break;
 			case "3":
-				rfcsuma.push("03");
+				sum.push("03");
 				break;
 			case "4":
-				rfcsuma.push("04");
+				sum.push("04");
 				break;
 			case "5":
-				rfcsuma.push("05");
+				sum.push("05");
 				break;
 			case "6":
-				rfcsuma.push("06");
+				sum.push("06");
 				break;
 			case "7":
-				rfcsuma.push("07");
+				sum.push("07");
 				break;
 			case "8":
-				rfcsuma.push("08");
+				sum.push("08");
 				break;
 			case "9":
-				rfcsuma.push("09");
+				sum.push("09");
 				break;
 			case "A":
-				rfcsuma.push("10");
+				sum.push("10");
 				break;
 			case "B":
-				rfcsuma.push("11");
+				sum.push("11");
 				break;
 			case "C":
-				rfcsuma.push("12");
+				sum.push("12");
 				break;
 			case "D":
-				rfcsuma.push("13");
+				sum.push("13");
 				break;
 			case "E":
-				rfcsuma.push("14");
+				sum.push("14");
 				break;
 			case "F":
-				rfcsuma.push("15");
+				sum.push("15");
 				break;
 			case "G":
-				rfcsuma.push("16");
+				sum.push("16");
 				break;
 			case "H":
-				rfcsuma.push("17");
+				sum.push("17");
 				break;
 			case "I":
-				rfcsuma.push("18");
+				sum.push("18");
 				break;
 			case "J":
-				rfcsuma.push("19");
+				sum.push("19");
 				break;
 			case "K":
-				rfcsuma.push("20");
+				sum.push("20");
 				break;
 			case "L":
-				rfcsuma.push("21");
+				sum.push("21");
 				break;
 			case "M":
-				rfcsuma.push("22");
+				sum.push("22");
 				break;
 			case "N":
-				rfcsuma.push("23");
+				sum.push("23");
 				break;
 			case "&":
-				rfcsuma.push("24");
+				sum.push("24");
 				break;
 			case "O":
-				rfcsuma.push("25");
+				sum.push("25");
 				break;
 			case "P":
-				rfcsuma.push("26");
+				sum.push("26");
 				break;
 			case "Q":
-				rfcsuma.push("27");
+				sum.push("27");
 				break;
 			case "R":
-				rfcsuma.push("28");
+				sum.push("28");
 				break;
 			case "S":
-				rfcsuma.push("29");
+				sum.push("29");
 				break;
 			case "T":
-				rfcsuma.push("30");
+				sum.push("30");
 				break;
 			case "U":
-				rfcsuma.push("31");
+				sum.push("31");
 				break;
 			case "V":
-				rfcsuma.push("32");
+				sum.push("32");
 				break;
 			case "W":
-				rfcsuma.push("33");
+				sum.push("33");
 				break;
 			case "X":
-				rfcsuma.push("34");
+				sum.push("34");
 				break;
 			case "Y":
-				rfcsuma.push("35");
+				sum.push("35");
 				break;
 			case "Z":
-				rfcsuma.push("36");
+				sum.push("36");
 				break;
 			case " ":
-				rfcsuma.push("37");
+				sum.push("37");
 				break;
 			case "Ã‘":
-				rfcsuma.push("38");
+				sum.push("38");
 				break;
 			default:
-				rfcsuma.push("00");
+				sum.push("00");
 		}
 	}
 	for (i = 13; i > 1; i--) {
-		nv = nv + rfcsuma[y] * i;
+		nv = nv + sum[y] * i;
 		y++;
 	}
 	nv = nv % 11;
@@ -311,16 +315,16 @@ function RFCDigitoVerificador(rfc) {
  * @param {string} rfc - The RFC string to be processed.
  * @returns {string} - The processed RFC string with prohibited words replaced by "X".
  */
-function RFCQuitaProhibidas(rfc) {
-	var res;
+function removeSwearWords(rfc) {
+	let res;
 	rfc = rfc.toUpperCase();
-	var strPalabras = "BUEI*BUEY*CACA*CACO*CAGA*CAGO*CAKA*CAKO*COGE*COJA*";
-	strPalabras = strPalabras + "KOGE*KOJO*KAKA*KULO*MAME*MAMO*MEAR*";
-	strPalabras = strPalabras + "MEAS*MEON*MION*COJE*COJI*COJO*CULO*";
-	strPalabras = strPalabras + "FETO*GUEY*JOTO*KACA*KACO*KAGA*KAGO*";
-	strPalabras = strPalabras + "MOCO*MULA*PEDA*PEDO*PENE*PUTA*PUTO*";
-	strPalabras = strPalabras + "QULO*RATA*RUIN*";
-	res = strPalabras.match(rfc);
+	let strWords = "BUEI*BUEY*CACA*CACO*CAGA*CAGO*CAKA*CAKO*COGE*COJA*";
+	strWords = strWords + "KOGE*KOJO*KAKA*KULO*MAME*MAMO*MEAR*";
+	strWords = strWords + "MEAS*MEON*MION*COJE*COJI*COJO*CULO*";
+	strWords = strWords + "FETO*GUEY*JOTO*KACA*KACO*KAGA*KAGO*";
+	strWords = strWords + "MOCO*MULA*PEDA*PEDO*PENE*PUTA*PUTO*";
+	strWords = strWords + "QULO*RATA*RUIN*";
+	res = strWords.match(rfc);
 	if (res != null) {
 		rfc = rfc.substr(0, 3) + "X";
 		return rfc;
@@ -331,68 +335,68 @@ function RFCQuitaProhibidas(rfc) {
 
 /**
  * Calculates the RFC (Registro Federal de Contribuyentes) using the first two letters of the last name and first name.
- * @param {string} nombre - The first name.
- * @param {string} apellido - The last name.
+ * @param {string} name - The first name.
+ * @param {string} lastName - The last name.
  * @returns {string} The calculated RFC.
  */
-function RFCUnApellido(nombre, apellido) {
-	var rfc = apellido.substr(0, 2) + nombre.substr(0, 2);
+function uniqueLastName(name, lastName) {
+	let rfc = lastName.substr(0, 2) + name.substr(0, 2);
 	return rfc;
 }
 
 /**
  * Calculates the RFC (Registro Federal de Contribuyentes) based on the given parameters.
- * @param {string} ap_paterno - The paternal last name.
- * @param {string} ap_materno - The maternal last name.
- * @param {string} nombre - The first name.
+ * @param {string} lastName1 - The paternal last name.
+ * @param {string} lastName2 - The maternal last name.
+ * @param {string} name - The first name.
  * @returns {string} The calculated RFC.
  */
-function RFCArmalo(ap_paterno, ap_materno, nombre) {
-	var strVocales = "aeiou";
-	var strPrimeraVocal = "";
-	var i = 0;
-	var x = 0;
-	var y = 0;
-	for (i = 1; i <= ap_paterno.length; i++) {
+function buildRFC(lastName1, lastName2, name) {
+	let strVowels = "aeiou";
+	let strFirstVowel = "";
+	let i = 0;
+	let x = 0;
+	let y = 0;
+	for (i = 1; i <= lastName1.length; i++) {
 		if (y == 0) {
-			for (x = 0; x <= strVocales.length; x++) {
-				if (ap_paterno.substr(i, 1) == strVocales.substr(x, 1)) {
+			for (x = 0; x <= strVowels.length; x++) {
+				if (lastName1.substr(i, 1) == strVowels.substr(x, 1)) {
 					y = 1;
-					strPrimeraVocal = ap_paterno.substr(i, 1);
+					strFirstVowel = lastName1.substr(i, 1);
 				}
 			}
 		}
 	}
-	var rfc =
-		ap_paterno.substr(0, 1) +
-		strPrimeraVocal +
-		ap_materno.substr(0, 1) +
-		nombre.substr(0, 1);
+	let rfc =
+		lastName1.substr(0, 1) +
+		strFirstVowel +
+		lastName2.substr(0, 1) +
+		name.substr(0, 1);
 	return rfc;
 }
 
 /**
  * Calculates the RFC (Registro Federal de Contribuyentes) using the first character of the paternal and maternal surnames,
  * and the first two characters of the given name.
- * @param {string} ap_paterno - The paternal surname.
- * @param {string} ap_materno - The maternal surname.
- * @param {string} nombre - The given name.
+ * @param {string} lastName1 - The paternal surname.
+ * @param {string} lastName2 - The maternal surname.
+ * @param {string} name - The given name.
  * @returns {string} The calculated RFC.
  */
-function RFCApellidoCorto(ap_paterno, ap_materno, nombre) {
-	var rfc =
-		ap_paterno.substr(0, 1) + ap_materno.substr(0, 1) + nombre.substr(0, 2);
+function shortLastName(lastName1, lastName2, name) {
+	let rfc =
+		lastName1.substr(0, 1) + lastName2.substr(0, 1) + name.substr(0, 2);
 	return rfc;
 }
 
 /**
  * Removes specified words and prefixes from a given text to calculate RFC.
- * @param {string} strTexto - The input text.
+ * @param {string} text - The input text.
  * @returns {string} - The modified text after filtering.
  */
-function RFCFiltraNombres(strTexto) {
-	var i = 0;
-	var strArPalabras = [
+function filterName(text) {
+	let i = 0;
+	let words = [
 		".",
 		",",
 		"de ",
@@ -406,382 +410,381 @@ function RFCFiltraNombres(strTexto) {
 		"von ",
 		"van ",
 	];
-	for (i = 0; i <= strArPalabras.length; i++) {
-		strTexto = strTexto.replace(strArPalabras[i], "");
+	for (i = 0; i <= words.length; i++) {
+		text = text.replace(words[i], "");
 	}
-	strArPalabras = ["jose ", "maria ", "j ", "ma "];
-	for (i = 0; i <= strArPalabras.length; i++) {
-		strTexto = strTexto.replace(strArPalabras[i], "");
+	words = ["jose ", "maria ", "j ", "ma "];
+	for (i = 0; i <= words.length; i++) {
+		text = text.replace(words[i], "");
 	}
-	switch (strTexto.substr(0, 2)) {
+	switch (text.substr(0, 2)) {
 		case "ch":
-			strTexto = strTexto.replace("ch", "c");
+			text = text.replace("ch", "c");
 			break;
 		case "ll":
-			strTexto = strTexto.replace("ll", "l");
+			text = text.replace("ll", "l");
 			break;
 	}
-	return strTexto;
+	return text;
 }
 
 /**
  * Removes accents from a given string.
- * @param {string} strTexto - The input string with accents.
+ * @param {string} text - The input string with accents.
  * @returns {string} - The input string with accents removed.
  */
-function RFCFiltraAcentos(strTexto) {
-	strTexto = strTexto.replace("Ã¡", "a");
-	strTexto = strTexto.replace("Ã©", "e");
-	strTexto = strTexto.replace("Ã­", "i");
-	strTexto = strTexto.replace("Ã³", "o");
-	strTexto = strTexto.replace("Ãº", "u");
-	return strTexto;
+function filterSpecialCharacters(text) {
+	text = text.replace("Ã¡", "a");
+	text = text.replace("Ã©", "e");
+	text = text.replace("Ã­", "i");
+	text = text.replace("Ã³", "o");
+	text = text.replace("Ãº", "u");
+	return text;
 }
 
 /**
- * Calculates the homonimia value based on the given last name, middle name, and first name.
+ * Calculates the homoclave value based on the given last name, middle name, and first name.
  *
- * @param {string} ap_paterno - The last name.
- * @param {string} ap_materno - The middle name.
- * @param {string} nombre - The first name.
- * @returns {string} The homonimia value.
+ * @param {string} lastName1 - The last name.
+ * @param {string} lastName2 - The middle name.
+ * @param {string} name - The first name.
+ * @returns {string} The homoclave value.
  */
-function homonimia(ap_paterno, ap_materno, nombre) {
-	var nombre_completo =
-		ap_paterno.trim() + " " + ap_materno.trim() + " " + nombre.trim();
-	var numero = "0";
-	var letra;
-	var numero1;
-	var numero2;
-	var numeroSuma = 0;
-	for (i = 0; i <= nombre_completo.length; i++) {
-		letra = nombre_completo.substr(i, 1);
-		switch (letra) {
+function getHomoClave(lastName1, lastName2, name) {
+	let fullName =
+		lastName1.trim() + " " + lastName2.trim() + " " + name.trim();
+	let number = "0";
+	let letter;
+	let number1;
+	let number2;
+	let sum = 0;
+	for (i = 0; i <= fullName.length; i++) {
+		letter = fullName.substr(i, 1);
+		switch (letter) {
 			case "Ã±":
-				numero = numero + "10";
+				number = number + "10";
 				break;
 			case "Ã¼":
-				numero = numero + "10";
+				number = number + "10";
 				break;
 			case "a":
-				numero = numero + "11";
+				number = number + "11";
 				break;
 			case "b":
-				numero = numero + "12";
+				number = number + "12";
 				break;
 			case "c":
-				numero = numero + "13";
+				number = number + "13";
 				break;
 			case "d":
-				numero = numero + "14";
+				number = number + "14";
 				break;
 			case "e":
-				numero = numero + "15";
+				number = number + "15";
 				break;
 			case "f":
-				numero = numero + "16";
+				number = number + "16";
 				break;
 			case "g":
-				numero = numero + "17";
+				number = number + "17";
 				break;
 			case "h":
-				numero = numero + "18";
+				number = number + "18";
 				break;
 			case "i":
-				numero = numero + "19";
+				number = number + "19";
 				break;
 			case "j":
-				numero = numero + "21";
+				number = number + "21";
 				break;
 			case "k":
-				numero = numero + "22";
+				number = number + "22";
 				break;
 			case "l":
-				numero = numero + "23";
+				number = number + "23";
 				break;
 			case "m":
-				numero = numero + "24";
+				number = number + "24";
 				break;
 			case "n":
-				numero = numero + "25";
+				number = number + "25";
 				break;
 			case "Ã±":
-				numero = numero + "40";
+				number = number + "40";
 				break;
 			case "o":
-				numero = numero + "26";
+				number = number + "26";
 				break;
 			case "p":
-				numero = numero + "27";
+				number = number + "27";
 				break;
 			case "q":
-				numero = numero + "28";
+				number = number + "28";
 				break;
 			case "r":
-				numero = numero + "29";
+				number = number + "29";
 				break;
 			case "s":
-				numero = numero + "32";
+				number = number + "32";
 				break;
 			case "t":
-				numero = numero + "33";
+				number = number + "33";
 				break;
 			case "u":
-				numero = numero + "34";
+				number = number + "34";
 				break;
 			case "v":
-				numero = numero + "35";
+				number = number + "35";
 				break;
 			case "w":
-				numero = numero + "36";
+				number = number + "36";
 				break;
 			case "x":
-				numero = numero + "37";
+				number = number + "37";
 				break;
 			case "y":
-				numero = numero + "38";
+				number = number + "38";
 				break;
 			case "z":
-				numero = numero + "39";
+				number = number + "39";
 				break;
 			case " ":
-				numero = numero + "00";
+				number = number + "00";
 				break;
 		}
 	}
-	for (i = 0; i <= numero.length + 1; i++) {
-		numero1 = numero.substr(i, 2);
-		numero2 = numero.substr(i + 1, 1);
-		numeroSuma = numeroSuma + numero1 * numero2;
+	for (i = 0; i <= number.length + 1; i++) {
+		number1 = number.substr(i, 2);
+		number2 = number.substr(i + 1, 1);
+		sum = sum + number1 * number2;
 	}
-	var numero3 = numeroSuma % 1000;
-	var numero4 = numero3 / 34;
-	var numero5 = numero4.toString().split(".")[0];
-	var numero6 = numero3 % 34;
-	var homonimio = "";
+	let number3 = sum % 1000;
+	let number4 = number3 / 34;
+	let number5 = number4.toString().split(".")[0];
+	let number6 = number3 % 34;
+	let homoclave = "";
 
-	switch (numero5) {
+	switch (number5) {
 		case "0":
-			homonimio = "1";
+			homoclave = "1";
 			break;
 		case "1":
-			homonimio = "2";
+			homoclave = "2";
 			break;
 		case "2":
-			homonimio = "3";
+			homoclave = "3";
 			break;
 		case "3":
-			homonimio = "4";
+			homoclave = "4";
 			break;
 		case "4":
-			homonimio = "5";
+			homoclave = "5";
 			break;
 		case "5":
-			homonimio = "6";
+			homoclave = "6";
 			break;
 		case "6":
-			homonimio = "7";
+			homoclave = "7";
 			break;
 		case "7":
-			homonimio = "8";
+			homoclave = "8";
 			break;
 		case "8":
-			homonimio = "9";
+			homoclave = "9";
 			break;
 		case "9":
-			homonimio = "A";
+			homoclave = "A";
 			break;
 		case "10":
-			homonimio = "B";
+			homoclave = "B";
 			break;
 		case "11":
-			homonimio = "C";
+			homoclave = "C";
 			break;
 		case "12":
-			homonimio = "D";
+			homoclave = "D";
 			break;
 		case "13":
-			homonimio = "E";
+			homoclave = "E";
 			break;
 		case "14":
-			homonimio = "F";
+			homoclave = "F";
 			break;
 		case "15":
-			homonimio = "G";
+			homoclave = "G";
 			break;
 		case "16":
-			homonimio = "H";
+			homoclave = "H";
 			break;
 		case "17":
-			homonimio = "I";
+			homoclave = "I";
 			break;
 		case "18":
-			homonimio = "J";
+			homoclave = "J";
 			break;
 		case "19":
-			homonimio = "K";
+			homoclave = "K";
 			break;
 		case "20":
-			homonimio = "L";
+			homoclave = "L";
 			break;
 		case "21":
-			homonimio = "M";
+			homoclave = "M";
 			break;
 		case "22":
-			homonimio = "N";
+			homoclave = "N";
 			break;
 		case "23":
-			homonimio = "P";
+			homoclave = "P";
 			break;
 		case "24":
-			homonimio = "Q";
+			homoclave = "Q";
 			break;
 		case "25":
-			homonimio = "R";
+			homoclave = "R";
 			break;
 		case "26":
-			homonimio = "S";
+			homoclave = "S";
 			break;
 		case "27":
-			homonimio = "T";
+			homoclave = "T";
 			break;
 		case "28":
-			homonimio = "U";
+			homoclave = "U";
 			break;
 		case "29":
-			homonimio = "V";
+			homoclave = "V";
 			break;
 		case "30":
-			homonimio = "W";
+			homoclave = "W";
 			break;
 		case "31":
-			homonimio = "X";
+			homoclave = "X";
 			break;
 		case "32":
-			homonimio = "Y";
+			homoclave = "Y";
 			break;
 		case "33":
-			homonimio = "Z";
+			homoclave = "Z";
 			break;
 	}
-	switch (numero6.toString()) {
+	switch (number6.toString()) {
 		case "0":
-			homonimio = homonimio + "1";
+			homoclave = homoclave + "1";
 			break;
 		case "1":
-			homonimio = homonimio + "2";
+			homoclave = homoclave + "2";
 			break;
 		case "2":
-			homonimio = homonimio + "3";
+			homoclave = homoclave + "3";
 			break;
 		case "3":
-			homonimio = homonimio + "4";
+			homoclave = homoclave + "4";
 			break;
 		case "4":
-			homonimio = homonimio + "5";
+			homoclave = homoclave + "5";
 			break;
 		case "5":
-			homonimio = homonimio + "6";
+			homoclave = homoclave + "6";
 			break;
 		case "6":
-			homonimio = homonimio + "7";
+			homoclave = homoclave + "7";
 			break;
 		case "7":
-			homonimio = homonimio + "8";
+			homoclave = homoclave + "8";
 			break;
 		case "8":
-			homonimio = homonimio + "9";
+			homoclave = homoclave + "9";
 			break;
 		case "9":
-			homonimio = homonimio + "A";
+			homoclave = homoclave + "A";
 			break;
 		case "10":
-			homonimio = homonimio + "B";
+			homoclave = homoclave + "B";
 			break;
 		case "11":
-			homonimio = homonimio + "C";
+			homoclave = homoclave + "C";
 			break;
 		case "12":
-			homonimio = homonimio + "D";
+			homoclave = homoclave + "D";
 			break;
 		case "13":
-			homonimio = homonimio + "E";
+			homoclave = homoclave + "E";
 			break;
 		case "14":
-			homonimio = homonimio + "F";
+			homoclave = homoclave + "F";
 			break;
 		case "15":
-			homonimio = homonimio + "G";
+			homoclave = homoclave + "G";
 			break;
 		case "16":
-			homonimio = homonimio + "H";
+			homoclave = homoclave + "H";
 			break;
 		case "17":
-			homonimio = homonimio + "I";
+			homoclave = homoclave + "I";
 			break;
 		case "18":
-			homonimio = homonimio + "J";
+			homoclave = homoclave + "J";
 			break;
 		case "19":
-			homonimio = homonimio + "K";
+			homoclave = homoclave + "K";
 			break;
 		case "20":
-			homonimio = homonimio + "L";
+			homoclave = homoclave + "L";
 			break;
 		case "21":
-			homonimio = homonimio + "M";
+			homoclave = homoclave + "M";
 			break;
 		case "22":
-			homonimio = homonimio + "N";
+			homoclave = homoclave + "N";
 			break;
 		case "23":
-			homonimio = homonimio + "P";
+			homoclave = homoclave + "P";
 			break;
 		case "24":
-			homonimio = homonimio + "Q";
+			homoclave = homoclave + "Q";
 			break;
 		case "25":
-			homonimio = homonimio + "R";
+			homoclave = homoclave + "R";
 			break;
 		case "26":
-			homonimio = homonimio + "S";
+			homoclave = homoclave + "S";
 			break;
 		case "27":
-			homonimio = homonimio + "T";
+			homoclave = homoclave + "T";
 			break;
 		case "28":
-			homonimio = homonimio + "U";
+			homoclave = homoclave + "U";
 			break;
 		case "29":
-			homonimio = homonimio + "V";
+			homoclave = homoclave + "V";
 			break;
 		case "30":
-			homonimio = homonimio + "W";
+			homoclave = homoclave + "W";
 			break;
 		case "31":
-			homonimio = homonimio + "X";
+			homoclave = homoclave + "X";
 			break;
 		case "32":
-			homonimio = homonimio + "Y";
+			homoclave = homoclave + "Y";
 			break;
 		case "33":
-			homonimio = homonimio + "Z";
+			homoclave = homoclave + "Z";
 			break;
 	}
-	return homonimio;
+	return homoclave;
 }
 
 /**
  * Resets the form and clears the result elements for RFC calculation.
  */
 function repeat() {
-	document.getElementById("name_rfc").innerHTML = "---";
-	document.getElementById("dob_rfc").innerHTML = "---";
-	document.getElementById("rfc_result").textContent = "---";
-	var rfc_form = document.getElementById("rfc_form");
-	rfc_form.reset();
-	fadeInElement("rfc_form_div");
-	fadeOutElement("result_rfc");
+	$nameElement.innerHTML = "---";
+	$birthdayElement.innerHTML = "---";
+	$resultElement.innerHTML = "---";
+	dataForm.reset();
+	fadeInElement("dataFormWrapper");
+	fadeOutElement("resultWrapper");
 }
 
 /**
@@ -789,7 +792,7 @@ function repeat() {
  * @param {string} id - The id of the element to fade in.
  */
 function fadeInElement(id) {
-	var element = document.getElementById(id);
+	let element = document.getElementById(id);
 	element.style.display = "block";
 	setTimeout(function () {
 		element.style.opacity = 1;
@@ -801,7 +804,7 @@ function fadeInElement(id) {
  * @param {string} id - The ID of the element to fade out.
  */
 function fadeOutElement(id) {
-	var element = document.getElementById(id);
+	let element = document.getElementById(id);
 	element.style.opacity = 0;
 	element.style.display = "none";
 }

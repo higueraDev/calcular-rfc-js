@@ -11,7 +11,7 @@ h1 {
 	margin-bottom: 20px;
 }
 
-#rfc_form_div {
+#dataFormWrapper {
 	background-color: #fff;
 	max-width: 600px;
 	margin: 0 auto;
@@ -20,12 +20,12 @@ h1 {
 	box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
 }
 
-#rfc_form {
+#dataForm {
 	display: grid;
 	grid-gap: 10px;
 }
 
-#rfc_form > div > div {
+#dataForm > div > div {
 	display: flex;
 	flex-direction: column;
 	width: 33.33%;
@@ -33,13 +33,13 @@ h1 {
 	margin-bottom: 10px;
 }
 
-#rfc_form label {
+#dataForm label {
 	font-weight: bold;
 	margin-bottom: 10px;
 }
 
-#rfc_form input[type="text"],
-#rfc_form select {
+#dataForm input[type="text"],
+#dataForm select {
 	padding: 10px;
 	border: 1px solid #ddd;
 	border-radius: 5px;
@@ -47,13 +47,13 @@ h1 {
 	margin-bottom: 20px;
 }
 
-#rfc_form select option {
+#dataForm select option {
 	padding: 10px;
 	background-color: #f4f4f4;
 	color: #333;
 }
 
-#rfc_form input[type="submit"] {
+#dataForm input[type="submit"] {
 	background-color: #007bff;
 	color: white;
 	border: none;
@@ -63,7 +63,7 @@ h1 {
 	cursor: pointer;
 }
 
-#rfc_form input[type="number"] {
+#dataForm input[type="number"] {
 	padding: 10px;
 	border: 1px solid #ddd;
 	border-radius: 5px;
@@ -72,13 +72,13 @@ h1 {
 	box-sizing: border-box;
 }
 
-#rfc_form input[type="number"]:focus,
-#rfc_form select:focus {
+#dataForm input[type="number"]:focus,
+#dataForm select:focus {
 	border-color: #007bff;
 	outline: none;
 }
 
-#rfc_form input[type="submit"]:hover {
+#dataForm input[type="submit"]:hover {
 	background-color: #0056b3;
 }
 
@@ -99,12 +99,6 @@ h1 {
 	background-color: #c82333;
 }
 
-#repeatButton:disabled {
-	background-color: #dc3545;
-	color: #aaa;
-	pointer-events: none;
-}
-
 #results {
 	background-color: #fff;
 	max-width: 600px;
@@ -123,9 +117,9 @@ h1 {
 	margin-bottom: 0;
 }
 
-#name_rfc,
-#dob_rfc,
-#rfc_result {
+#nameElement,
+#birthdayElement,
+#resultElement {
 	font-weight: bold;
 	color: #333;
 }
