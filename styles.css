@@ -1,0 +1,142 @@
+body {
+	font-family: Arial, sans-serif;
+	background-color: #f4f4f4;
+	padding: 20px;
+}
+
+h1 {
+	font-family: "Arial", sans-serif;
+	color: #333;
+	text-align: center;
+	margin-bottom: 20px;
+}
+
+#rfc_form_div {
+	background-color: #fff;
+	max-width: 600px;
+	margin: 0 auto;
+	padding: 20px;
+	border-radius: 5px;
+	box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+}
+
+#rfc_form {
+	display: grid;
+	grid-gap: 10px;
+}
+
+#rfc_form > div > div {
+	display: flex;
+	flex-direction: column;
+	width: 33.33%;
+	padding: 0 10px;
+	margin-bottom: 10px;
+}
+
+#rfc_form label {
+	font-weight: bold;
+	margin-bottom: 10px;
+}
+
+#rfc_form input[type="text"],
+#rfc_form select {
+	padding: 10px;
+	border: 1px solid #ddd;
+	border-radius: 5px;
+	font-size: 16px;
+	margin-bottom: 20px;
+}
+
+#rfc_form select option {
+	padding: 10px;
+	background-color: #f4f4f4;
+	color: #333;
+}
+
+#rfc_form input[type="submit"] {
+	background-color: #007bff;
+	color: white;
+	border: none;
+	border-radius: 5px;
+	padding: 10px 20px;
+	font-size: 16px;
+	cursor: pointer;
+}
+
+#rfc_form input[type="number"] {
+	padding: 10px;
+	border: 1px solid #ddd;
+	border-radius: 5px;
+	font-size: 16px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+#rfc_form input[type="number"]:focus,
+#rfc_form select:focus {
+	border-color: #007bff;
+	outline: none;
+}
+
+#rfc_form input[type="submit"]:hover {
+	background-color: #0056b3;
+}
+
+#repeatButton {
+	appearance: none;
+	background-color: #dc3545;
+	color: white;
+	border: none;
+	border-radius: 5px;
+	padding: 10px 20px;
+	font-size: 16px;
+	cursor: pointer;
+	margin-top: 20px;
+	display: block;
+}
+
+#repeatButton:hover {
+	background-color: #c82333;
+}
+
+#repeatButton:disabled {
+	background-color: #dc3545;
+	color: #aaa;
+	pointer-events: none;
+}
+
+#results {
+	background-color: #fff;
+	max-width: 600px;
+	margin: 20px auto;
+	padding: 20px;
+	border-radius: 5px;
+	box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+}
+
+#results p {
+	margin: 0 0 10px;
+	line-height: 1.6;
+}
+
+#results p:last-child {
+	margin-bottom: 0;
+}
+
+#name_rfc,
+#dob_rfc,
+#rfc_result {
+	font-weight: bold;
+	color: #333;
+}
+
+.copy-icon {
+	cursor: pointer;
+	margin-left: 10px;
+	color: 0.007bff;
+	font-size: 20px;
+}
+
+.copy-icon:hover {
+	color: #0056b3;
+}
